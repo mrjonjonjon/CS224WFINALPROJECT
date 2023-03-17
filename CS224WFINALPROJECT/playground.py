@@ -4,6 +4,6 @@ from utils import *
 
 if __name__=='__main__':
     # example weighted adjacency matrix
-    adj_matrix = np.random.randn(1000,1000)
+    adj_matrix = torch.Tensor(np.random.randn(1000,1000))
 
-    visualize_adj_grid(adj_matrix)
+    print(adj_matrix.shape[0])

@@ -163,9 +163,11 @@ def generate_cyclic_digraph(n):
         G.add_edge(i, (i+1)%n)
     return G
 
-def h(A,alpha):
+def h(A):
     #h(A) ≡ tr[(I + αA ◦ A)^m] − m = 0,
+    #alpha = A.shape[0]
     m = A.shape[0]
+    alpha = 1/m
     id = torch.eye(m)
     operand = id + alpha*A*A
     #print(operand)
@@ -173,6 +175,22 @@ def h(A,alpha):
     #print(operand)
     trace = torch.trace(operand)-m
     return trace
+
+
+def neg_log_likelihood_loss(mean1,mean2,log_variance):
+    
+    neg_log_p = log_variance + torch.div(torch.pow(mean1 - mean2, 2), 2.*np.exp(2. * log_variance))
+    return neg_log_p.sum() / mean2.size(0)
+
+#paper uses sem version instead of nonlinear version?
+def kl_gaussian_sem(z):
+    #output of the encoder is the mean
+    mu = z
+    kl_div = mu*mu
+    kl_sum = kl_div.sum()
+    return (kl_sum/z.size(0))*0.5
+
+    
 class CustomDataset(Dataset):
     def __init__(self, var_dim,weight_matrix,num_samples, transform=None, target_transform=None):
         self.data = generate_data_linear_sem(var_dim,weight_matrix,num_samples)
