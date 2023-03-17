@@ -103,10 +103,10 @@ def assign_coordinates_proper(G):
         if i not in visited:
             
             assign_coordinates(G,i,0,0,pos,visited)
-            print("COMPONENT DONE")
+            #print("COMPONENT DONE")
     return pos
 def assign_coordinates(G, node, x, y,pos,visited):
-    print(node,x,y)
+    #print(node,x,y)
     visited.add(node)
     pos[node]=(x,y)
     children = list(G.successors(node))
@@ -120,7 +120,7 @@ def assign_coordinates(G, node, x, y,pos,visited):
     
 #visualize a weighted digraph
 def visualize_weighted_digraph(G):
-    sorted_nodes = list(nx.topological_sort(G))
+   # sorted_nodes = list(nx.topological_sort(G))
 
     # apply the Kamada-Kawai layout
     pos = nx.kamada_kawai_layout(G)
@@ -152,6 +152,27 @@ def weight_matrix_to_digraph(adj_matrix):
             if adj_matrix[i][j] != 0:
                 G.add_weighted_edges_from([(i, j, adj_matrix[i][j])])
     return G
+
+def generate_cyclic_digraph(n):
+    G = nx.DiGraph()
+
+    G.add_nodes_from(range(n))
+
+    # Add edges to form a cycle
+    for i in range(n):
+        G.add_edge(i, (i+1)%n)
+    return G
+
+def h(A,alpha):
+    #h(A) ≡ tr[(I + αA ◦ A)^m] − m = 0,
+    m = A.shape[0]
+    id = torch.eye(m)
+    operand = id + alpha*A*A
+    #print(operand)
+    operand = torch.matrix_power(operand,m)
+    #print(operand)
+    trace = torch.trace(operand)-m
+    return trace
 class CustomDataset(Dataset):
     def __init__(self, var_dim,weight_matrix,num_samples, transform=None, target_transform=None):
         self.data = generate_data_linear_sem(var_dim,weight_matrix,num_samples)
@@ -166,13 +187,10 @@ class CustomDataset(Dataset):
     
     
 if __name__=='__main__':
-    g = generate_weighted_acyclic_graph(50,1)
-    #g.add_edge(0,1,weight = 1)
+    g = generate_cyclic_digraph(2)
+    g = generate_weighted_acyclic_graph(10,0.5)
     a = get_adjacency_matrix(g)
-    samples = generate_data_linear_sem(2,a,1)
-
-
-    print(a,'\n')
-    print("SAMPLES ARE ",samples)
-    #visualize_weighted_digraph(g)
+    
+    visualize_weighted_digraph(g)
     visualize_adj_grid(a)
+    print(h(a,0.9))

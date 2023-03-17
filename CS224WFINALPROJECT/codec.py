@@ -28,7 +28,7 @@ For instance, if in_features=5 and out_features=10 and the input tensor x has di
        
        #========WEIGHTS========
         #the adjacency matrix
-        self.adj_A = nn.Parameter(torch.randn((num_vars,num_vars)), requires_grad=True)
+        self.adj_A = nn.Parameter(torch.zeros((num_vars,num_vars)), requires_grad=True)
         #last dimension of input(var dim) matches in_features(var_dim)
         self.w1= nn.Linear(var_dim, hidden_dim,dtype=torch.double)
         self.relu = nn.ReLU()
@@ -52,7 +52,7 @@ For instance, if in_features=5 and out_features=10 and the input tensor x has di
         pre_sigma=self.sig_w2(x).double()
         mu = matmul(adj_2,pre_mu).double()
         sigma = matmul(adj_2,pre_sigma).double()
-        #sampling
+        #sampling. equivalent to sampling from normal distribution with mean mu, covariance matrix sigma*Id
         z = mu.double() + sigma*self.N.sample(mu.shape).double()
         
         #penalize latent distribution for being far from standard normal
