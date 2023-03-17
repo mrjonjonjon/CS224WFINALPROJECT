@@ -9,6 +9,16 @@ from torchvision import datasets
 from torchvision.transforms import ToTensor
 import matplotlib.pyplot as plt
 
+
+
+def save_model(model,name='default_name'):
+    torch.save(model,f'./saved_models/{name}.pth')
+    
+def load_model(name='default_name'):
+    return torch.load(f'./saved_models/{name}.pth')
+
+
+    
 #visualizes adjacency matrix as a heatmap grid
 def visualize_adj_grid(adj_matrix):
     plt.imshow(adj_matrix, cmap='viridis', interpolation='nearest')
@@ -26,7 +36,7 @@ def generate_data_linear_sem(var_dim,w_adj,num_samples):
         noise = np.random.standard_normal(size=(num_vars,var_dim))
         #print("NOISE IS ",noise)
         sample = matmul(w_adj2,noise)
-        all_samples.append(sample)
+        all_samples.append(torch.Tensor(sample))
 
     return all_samples
 

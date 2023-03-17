@@ -28,12 +28,12 @@ For instance, if in_features=5 and out_features=10 and the input tensor x has di
        
        #========WEIGHTS========
         #the adjacency matrix
-        self.adj_A = nn.Parameter(torch.eye(num_vars), requires_grad=True)
+        self.adj_A = nn.Parameter(torch.randn((num_vars,num_vars)), requires_grad=True)
         #last dimension of input(var dim) matches in_features(var_dim)
-        self.w1= nn.Linear(var_dim, hidden_dim)
+        self.w1= nn.Linear(var_dim, hidden_dim,dtype=torch.double)
         self.relu = nn.ReLU()
-        self.mu_w2 = nn.Linear(hidden_dim,latent_dim)
-        self.sig_w2 = nn.Linear(hidden_dim,latent_dim)
+        self.mu_w2 = nn.Linear(hidden_dim,latent_dim,dtype=torch.double)
+        self.sig_w2 = nn.Linear(hidden_dim,latent_dim,dtype=torch.double)
         
         #====norm dist======
         self.N = torch.distributions.Normal(0,1)
@@ -43,20 +43,20 @@ For instance, if in_features=5 and out_features=10 and the input tensor x has di
         
     def forward(self, x):
         #I-A^T
-        adj_2 = (torch.eye(self.adj_A.shape[0]).double() - (self.adj.transpose(0,1)))
+        adj_2 = (torch.eye(self.adj_A.shape[0]).double() - (self.adj_A.transpose(0,1)))
         
-        
-        x=self.w1(x)
-        x=self.relu(x)
-        pre_mu=self.mu_w2(x)
-        pre_sigma=self.sig_w2(x)
-        mu = matmul(pre_mu,adj_2)
-        sigma = matmul(pre_sigma,adj_2)
+        x=x.double()
+        x=self.w1(x).double()
+        x=self.relu(x).double()
+        pre_mu=self.mu_w2(x).double()
+        pre_sigma=self.sig_w2(x).double()
+        mu = matmul(adj_2,pre_mu).double()
+        sigma = matmul(adj_2,pre_sigma).double()
         #sampling
-        z = mu + sigma*self.N.sample(mu.shape)
+        z = mu.double() + sigma*self.N.sample(mu.shape).double()
         
         #penalize latent distribution for being far from standard normal
-        self.kl = (sigma**2 + mu**2 - torch.log(sigma) - 1/2).sum()
+        self.kl = (sigma**2 + mu**2 - torch.log(sigma) - 1/2).sum().double()
         return z
     
     
@@ -64,17 +64,18 @@ class Decoder(nn.Module):
     def __init__(self,num_vars,latent_dim,hidden_dim,output_dim):
         super(Decoder, self).__init__()
         #self.adj_A = #nn.Parameter(torch.eye(num_vars), requires_grad=True)
-        self.w3 = nn.Linear(latent_dim, hidden_dim)
+        self.w3 = nn.Linear(latent_dim, hidden_dim,dtype=torch.double)
         self.relu = nn.ReLU()
-        self.w4 = nn.Linear(hidden_dim, output_dim)
+        self.w4 = nn.Linear(hidden_dim, output_dim,dtype=torch.double)
 
     def forward(self, z,adj_A):
         #(I-A^T)^-1
+        #print(torch.eye(adj_A.shape[0]).double()-adj_A.transpose(0,1),torch.eye(adj_A.shape[0]))
         adj_inv = torch.inverse(torch.eye(adj_A.shape[0]).double()-adj_A.transpose(0,1))
         x = matmul(adj_inv,z)
-        x = self.w3(z)
-        x=self.relu(z)
-        x=self.w4(z)
+        x = self.w3(x)
+        x=self.relu(x)
+        x=self.w4(x)
         return x
     
 class VariationalAutoencoder(nn.Module):
