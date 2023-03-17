@@ -8,7 +8,7 @@ from torch.utils.data import Dataset
 from torchvision import datasets
 from torchvision.transforms import ToTensor
 import matplotlib.pyplot as plt
-
+import random
 
 
 def save_model(model,name='default_name'):
@@ -62,9 +62,70 @@ def get_adjacency_matrix(G):
     
     return A
 
+def random_acyclic_binary_matrix(n):
+
+    T = nx.DiGraph()
+
+    root = 0
+    T.add_node(root)
+
+    nodes = list(range(1, n))
+
+    while nodes:
+        node = random.choice(nodes)
+        parent = random.choice(list(T.nodes()))
+        T.add_node(node)
+        T.add_edge(parent, node)
+        nodes.remove(node)
+
+    return nx.to_numpy_array(T, nodelist=range(n), dtype=int)
+
+
+def visualize_digraph_nice_layout(G):
+    start=(0,0)
+    pos={}
+    start_node=0
+    visited = set()
+    pos=assign_coordinates_proper(G)
+    print(pos)
+    nx.draw_networkx_nodes(G, pos)
+    nx.draw_networkx_edges(G, pos)
+    nx.draw_networkx_labels(G,pos)
+    edge_labels = nx.get_edge_attributes(G, 'weight')
+    nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels, label_pos=0.3)
+    plt.axis('off')
+
+    plt.show()
+def assign_coordinates_proper(G):
+    visited=set()
+    pos={}
+    for i in range(len(G.nodes)):
+        if i not in visited:
+            
+            assign_coordinates(G,i,0,0,pos,visited)
+            print("COMPONENT DONE")
+    return pos
+def assign_coordinates(G, node, x, y,pos,visited):
+    print(node,x,y)
+    visited.add(node)
+    pos[node]=(x,y)
+    children = list(G.successors(node))
+    if not children:
+        return # base case
+    num_children = len(children)
+    for i, child in enumerate(children):
+        x_offset = (i - num_children/2) # adjust x coordinate based on number of children
+        pos[child] = (x + x_offset, y - 1)
+        assign_coordinates(G, child, x + x_offset, y - 1,pos,visited)
+    
 #visualize a weighted digraph
 def visualize_weighted_digraph(G):
-    pos = nx.spring_layout(G)
+    sorted_nodes = list(nx.topological_sort(G))
+
+    # apply the Kamada-Kawai layout
+    pos = nx.kamada_kawai_layout(G)
+
+    #pos = nx.spring_layout(G)
     nx.draw_networkx_nodes(G, pos)
     nx.draw_networkx_edges(G, pos)
     nx.draw_networkx_labels(G,pos)
