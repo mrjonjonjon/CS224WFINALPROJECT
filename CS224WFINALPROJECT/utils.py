@@ -9,6 +9,7 @@ from torchvision import datasets
 from torchvision.transforms import ToTensor
 import matplotlib.pyplot as plt
 import random
+import causaldata
 
 
 def save_model(model,name='default_name'):
@@ -202,6 +203,20 @@ class CustomDataset(Dataset):
     def __getitem__(self, idx):
         sample = self.data[idx]
         return sample
+    
+
+class CastleDataset(Dataset):
+    def __init__(self, weight_matrix):
+        df = causaldata.castle.load_pandas().data
+        data = torch.tensor(df.values.astype('float32'))
+        self.data = torch.unsqueeze(data, 2)
+        self.adj = weight_matrix
+
+    def __len__(self):
+        return len(self.data)
+
+    def __getitem__(self, index):
+        return self.data[index]
     
     
 if __name__=='__main__':
