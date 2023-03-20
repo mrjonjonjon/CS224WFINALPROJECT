@@ -211,6 +211,7 @@ class CollegeDataset(Dataset):
     def __init__(self, weight_matrix):
         path = dirname(abspath(__file__))
         data = read_stata(join(path, 'close_college.dta'))
+        data['lwage'] = data['lwage'].apply(lambda x: int(x)) # Change living wage to discrete variable (Num Figures)
         data = torch.tensor(data.values.astype('float32'))
         scaler = MinMaxScaler()
         for i in range(data.shape[1]):
