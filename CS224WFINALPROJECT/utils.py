@@ -9,7 +9,9 @@ from torchvision import datasets
 from torchvision.transforms import ToTensor
 import matplotlib.pyplot as plt
 import random
-import causaldata
+from sklearn.preprocessing import MinMaxScaler
+from os.path import dirname, abspath, join
+from pandas import read_stata
 
 
 def save_model(model,name='default_name'):
@@ -30,10 +32,10 @@ def visualize_adj_grid(adj_matrix):
 def generate_data_linear_sem(var_dim,w_adj,num_samples):
     
     num_vars  = w_adj.shape[0]
-    #X = (I − A^T)^-1 Z 
+    #X = (I − A^T)^-1 Z
     w_adj2 = inv(np.eye(num_vars) - w_adj.T)
     all_samples=[]
-    for i in range(num_samples): 
+    for i in range(num_samples):
         noise = np.random.standard_normal(size=(num_vars,var_dim))
         #print("NOISE IS ",noise)
         sample = matmul(w_adj2,noise)
@@ -203,12 +205,20 @@ class CustomDataset(Dataset):
     def __getitem__(self, idx):
         sample = self.data[idx]
         return sample
-    
 
-class CastleDataset(Dataset):
+
+class CollegeDataset(Dataset):
     def __init__(self, weight_matrix):
-        df = causaldata.castle.load_pandas().data
-        data = torch.tensor(df.values.astype('float32'))
+        path = dirname(abspath(__file__))
+        data = read_stata(join(path, 'close_college.dta'))
+        data['lwage'] = data['lwage'].apply(lambda x: int(x)) # Change living wage to discrete variable (Num Figures)
+        data = torch.tensor(data.values.astype('float32'))
+        scaler = MinMaxScaler()
+        for i in range(data.shape[1]):
+            column = data[:, i].reshape(-1, 1)
+            scaler.fit(column)
+            column_normalized = scaler.transform(column)
+            data[:, i] = torch.tensor(column_normalized.reshape(-1), dtype=torch.float32)
         self.data = torch.unsqueeze(data, 2)
         self.adj = weight_matrix
 
